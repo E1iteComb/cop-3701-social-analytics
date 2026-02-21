@@ -28,3 +28,15 @@ This project builds a social analytics database focused on short-form posts. The
 Possible sources include:
 1. Public social media datasets from Kaggle containing tweets + hashtags.
 2. Public academic datasets on tweet text + metadata.
+
+---
+
+## Database Application (Part B)
+
+This project builds a social analytics database for tweets, hashtags, and sentiment scores. The system stores tweet content and metadata, tracks hashtag usage frequency, and supports hashtag trend ranking.
+
+### Unique / Challenging Aspects
+- Many-to-many relationship between Tweets and Hashtags implemented using an associative entity.
+- One-to-one relationship between Tweet and SentimentScore.
+- Automated sentiment aggregation and trend ranking.
+- Proper enforcement of primary and foreign key constraints.
