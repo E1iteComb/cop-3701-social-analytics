@@ -75,3 +75,13 @@ All relations pass BCNF with respect to the listed functional dependencies becau
 - HASHTAG: hashtag_id → tag_text, first_seen_at; tag_text → hashtag_id (tag_text unique)
 - TWEET_HASHTAG: (tweet_id, hashtag_id) → tagged_at
 - SENTIMENT_SCORE: tweet_id → score, model_version, computed_at
+
+
+### Revised ER (Normalized Tables)
+
+```mermaid
+erDiagram
+    USER ||--o{ TWEET : posts
+    TWEET ||--|| SENTIMENT_SCORE : has
+    TWEET ||--o{ TWEET_HASHTAG : tagged_with
+    HASHTAG ||--o{ TWEET_HASHTAG : appears_in
