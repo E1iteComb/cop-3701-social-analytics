@@ -57,7 +57,7 @@ erDiagram
 
 ## Part C: Final Normalized Relational Schema (BCNF)
 
-All relations pass BCNF with respect to the listed functional dependencies because each nontrivial FD has a determinant that is aprimary key or candidate key. This means that no decomposition was required.
+All relations pass BCNF because each nontrivial FD has a determinant that is a primary key or candidate key. This means that no decomposition was required.
 
 ### Final Schema
 
@@ -68,7 +68,7 @@ All relations pass BCNF with respect to the listed functional dependencies becau
   PK = (tweet_id, hashtag_id)
 - **SENTIMENT_SCORE**(tweet_id PK/FK→TWEET.tweet_id, score, model_version, computed_at)
 
-### Functional Dependencies (Nontrivial)
+### Functional Dependencies
 
 - USER: user_id → username, email, display_name, location, created_at; email → user_id (email unique)
 - TWEET: tweet_id → user_id, tweet_text, created_at, lang, reply_to_tweet_id
@@ -77,7 +77,7 @@ All relations pass BCNF with respect to the listed functional dependencies becau
 - SENTIMENT_SCORE: tweet_id → score, model_version, computed_at
 
 
-### Revised ER (Normalized Tables)
+### Revised ER Diagram
 
 ```mermaid
 erDiagram
