@@ -22,9 +22,7 @@ def clean_tweet_text(text):
     return text
 
 def parse_date(date_str):
-    # Example: Mon Apr 06 22:19:45 PDT 2009
     parts = date_str.split()
-    # Remove timezone token so Python can parse it reliably
     cleaned = " ".join(parts[:4] + parts[5:])
     dt = datetime.strptime(cleaned, "%a %b %d %H:%M:%S %Y")
     return dt.strftime("%Y-%m-%d %H:%M:%S")
@@ -57,7 +55,6 @@ with zipfile.ZipFile(ZIP_PATH, "r") as zf:
 
             sentiment_raw, tweet_id_raw, date_raw, query_raw, username_raw, tweet_text_raw = row
 
-            # Keep only rows with tweet ids we can use
             try:
                 tweet_id = int(tweet_id_raw)
             except ValueError:
@@ -74,7 +71,6 @@ with zipfile.ZipFile(ZIP_PATH, "r") as zf:
             hashtags_in_tweet = hashtag_pattern.findall(tweet_text_raw)
             hashtags_in_tweet = [tag.lower() for tag in hashtags_in_tweet if tag.strip()]
 
-            # Map/create APP_USER
             if username not in user_map:
                 created_at = parse_date(date_raw)
                 user_map[username] = next_user_id
@@ -91,7 +87,6 @@ with zipfile.ZipFile(ZIP_PATH, "r") as zf:
             user_id = user_map[username]
             created_at = parse_date(date_raw)
 
-            # Add tweet
             tweets.append([
                 tweet_id,
                 user_id,
@@ -101,7 +96,6 @@ with zipfile.ZipFile(ZIP_PATH, "r") as zf:
                 ""
             ])
 
-            # Add sentiment score
             if sentiment_raw == "0":
                 score = -1.00
             elif sentiment_raw == "4":
@@ -116,7 +110,6 @@ with zipfile.ZipFile(ZIP_PATH, "r") as zf:
                 created_at
             ])
 
-            # Add hashtags and tweet-hashtag relationships
             for tag in hashtags_in_tweet:
                 if tag not in hashtag_map:
                     hashtag_map[tag] = next_hashtag_id
@@ -138,7 +131,6 @@ with zipfile.ZipFile(ZIP_PATH, "r") as zf:
                         created_at
                     ])
 
-            # Stop once strong entities all exceed 100
             if (
                 len(users) >= TARGET_USERS and
                 len(tweets) >= TARGET_TWEETS and
@@ -146,31 +138,26 @@ with zipfile.ZipFile(ZIP_PATH, "r") as zf:
             ):
                 break
 
-# Write APP_USER
 with open(os.path.join(DATA_DIR, "app_user.csv"), "w", newline="", encoding="utf-8") as f:
     writer = csv.writer(f)
     writer.writerow(["user_id", "username", "email", "display_name", "location", "created_at"])
     writer.writerows(users)
 
-# Write TWEET
 with open(os.path.join(DATA_DIR, "tweet.csv"), "w", newline="", encoding="utf-8") as f:
     writer = csv.writer(f)
     writer.writerow(["tweet_id", "user_id", "tweet_text", "created_at", "lang", "reply_to_tweet_id"])
     writer.writerows(tweets)
 
-# Write HASHTAG
 with open(os.path.join(DATA_DIR, "hashtag.csv"), "w", newline="", encoding="utf-8") as f:
     writer = csv.writer(f)
     writer.writerow(["hashtag_id", "tag_text", "first_seen_at"])
     writer.writerows(hashtags)
 
-# Write SENTIMENT_SCORE
 with open(os.path.join(DATA_DIR, "sentiment_score.csv"), "w", newline="", encoding="utf-8") as f:
     writer = csv.writer(f)
     writer.writerow(["tweet_id", "score", "model_version", "computed_at"])
     writer.writerows(sentiment_scores)
 
-# Write TWEET_HASHTAG
 with open(os.path.join(DATA_DIR, "tweet_hashtag.csv"), "w", newline="", encoding="utf-8") as f:
     writer = csv.writer(f)
     writer.writerow(["tweet_id", "hashtag_id", "tagged_at"])
