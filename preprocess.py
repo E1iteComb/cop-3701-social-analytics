@@ -1,170 +1,184 @@
 import csv
 import os
-import random
-from datetime import datetime, timedelta
+import re
+import zipfile
+from datetime import datetime
 
-random.seed(42)
-
+ZIP_PATH = "archive.zip"
 DATA_DIR = "data"
+
+TARGET_USERS = 120
+TARGET_TWEETS = 300
+TARGET_HASHTAGS = 120
+
 os.makedirs(DATA_DIR, exist_ok=True)
 
-NUM_USERS = 100
-NUM_TWEETS = 150
-NUM_HASHTAGS = 100
+hashtag_pattern = re.compile(r"#(\w+)")
+space_pattern = re.compile(r"\s+")
 
-locations = [
-    "Lakeland, FL",
-    "Miami, FL",
-    "Orlando, FL",
-    "Tampa, FL",
-    "Jacksonville, FL",
-    "Titusville, FL",
-    "Winter Haven, FL",
-    "Boca Raton, FL",
-    "Tallahassee, FL",
-    ""
-]
+def clean_tweet_text(text):
+    text = hashtag_pattern.sub("", text)
+    text = space_pattern.sub(" ", text).strip()
+    return text
 
-tweet_phrases = [
-    "Loving the new semester at Florida Poly.",
-    "Working on my database project tonight.",
-    "This update looks much better now.",
-    "Trying to clean my dataset correctly.",
-    "The analytics dashboard is finally working.",
-    "Still debugging a few issues in my script.",
-    "Finished another part of my course project.",
-    "This query gave me the result I needed.",
-    "Working through normalization step by step.",
-    "Testing some sample data for the database.",
-    "The schema design is starting to make sense.",
-    "Loading data into the tables now.",
-    "Reviewing the ER diagram one more time.",
-    "This sentiment score looks reasonable.",
-    "Building out the project structure in GitHub."
-]
+def parse_date(date_str):
+    # Example: Mon Apr 06 22:19:45 PDT 2009
+    parts = date_str.split()
+    # Remove timezone token so Python can parse it reliably
+    cleaned = " ".join(parts[:4] + parts[5:])
+    dt = datetime.strptime(cleaned, "%a %b %d %H:%M:%S %Y")
+    return dt.strftime("%Y-%m-%d %H:%M:%S")
 
-hashtag_bases = [
-    "college", "stem", "database", "sql", "python", "analytics", "trend", "sentiment",
-    "bug", "update", "school", "project", "coding", "data", "tech", "student",
-    "design", "schema", "query", "report", "load", "csv", "github", "oracle", "cloud"
-]
-
-def random_timestamp(start_date=datetime(2026, 1, 1, 8, 0, 0), max_days=90):
-    delta = timedelta(
-        days=random.randint(0, max_days),
-        hours=random.randint(0, 23),
-        minutes=random.randint(0, 59),
-        seconds=random.randint(0, 59)
-    )
-    return (start_date + delta).strftime("%Y-%m-%d %H:%M:%S")
-
-# -------------------------
-# APP_USER
-# -------------------------
+user_map = {}
 users = []
-for i in range(1, NUM_USERS + 1):
-    user_id = i
-    username = f"user_{i}"
-    email = f"user_{i}@example.com"
-    display_name = f"User {i}"
-    location = random.choice(locations)
-    created_at = random_timestamp()
-    users.append([user_id, username, email, display_name, location, created_at])
 
+hashtag_map = {}
+hashtags = []
+
+tweets = []
+sentiment_scores = []
+tweet_hashtag_rows = []
+tweet_hashtag_pairs = set()
+
+next_user_id = 1
+next_hashtag_id = 1
+
+with zipfile.ZipFile(ZIP_PATH, "r") as zf:
+    csv_name = zf.namelist()[0]
+
+    with zf.open(csv_name) as raw_file:
+        import io
+        text_file = io.TextIOWrapper(raw_file, encoding="latin-1")
+        reader = csv.reader(text_file)
+
+        for row in reader:
+            if len(row) != 6:
+                continue
+
+            sentiment_raw, tweet_id_raw, date_raw, query_raw, username_raw, tweet_text_raw = row
+
+            # Keep only rows with tweet ids we can use
+            try:
+                tweet_id = int(tweet_id_raw)
+            except ValueError:
+                continue
+
+            username = username_raw.strip()
+            if not username:
+                continue
+
+            cleaned_text = clean_tweet_text(tweet_text_raw)
+            if not cleaned_text:
+                continue
+
+            hashtags_in_tweet = hashtag_pattern.findall(tweet_text_raw)
+            hashtags_in_tweet = [tag.lower() for tag in hashtags_in_tweet if tag.strip()]
+
+            # Map/create APP_USER
+            if username not in user_map:
+                created_at = parse_date(date_raw)
+                user_map[username] = next_user_id
+                users.append([
+                    next_user_id,
+                    username,
+                    f"{username.lower()}@example.com",
+                    username,
+                    "",
+                    created_at
+                ])
+                next_user_id += 1
+
+            user_id = user_map[username]
+            created_at = parse_date(date_raw)
+
+            # Add tweet
+            tweets.append([
+                tweet_id,
+                user_id,
+                cleaned_text,
+                created_at,
+                "en",
+                ""
+            ])
+
+            # Add sentiment score
+            if sentiment_raw == "0":
+                score = -1.00
+            elif sentiment_raw == "4":
+                score = 1.00
+            else:
+                score = 0.00
+
+            sentiment_scores.append([
+                tweet_id,
+                score,
+                "sentiment140",
+                created_at
+            ])
+
+            # Add hashtags and tweet-hashtag relationships
+            for tag in hashtags_in_tweet:
+                if tag not in hashtag_map:
+                    hashtag_map[tag] = next_hashtag_id
+                    hashtags.append([
+                        next_hashtag_id,
+                        tag,
+                        created_at
+                    ])
+                    next_hashtag_id += 1
+
+                hashtag_id = hashtag_map[tag]
+                pair = (tweet_id, hashtag_id)
+
+                if pair not in tweet_hashtag_pairs:
+                    tweet_hashtag_pairs.add(pair)
+                    tweet_hashtag_rows.append([
+                        tweet_id,
+                        hashtag_id,
+                        created_at
+                    ])
+
+            # Stop once strong entities all exceed 100
+            if (
+                len(users) >= TARGET_USERS and
+                len(tweets) >= TARGET_TWEETS and
+                len(hashtags) >= TARGET_HASHTAGS
+            ):
+                break
+
+# Write APP_USER
 with open(os.path.join(DATA_DIR, "app_user.csv"), "w", newline="", encoding="utf-8") as f:
     writer = csv.writer(f)
     writer.writerow(["user_id", "username", "email", "display_name", "location", "created_at"])
     writer.writerows(users)
 
-# -------------------------
-# HASHTAG
-# -------------------------
-hashtags = []
-used_tags = set()
-hashtag_id = 1
-
-while len(hashtags) < NUM_HASHTAGS:
-    base = random.choice(hashtag_bases)
-    tag_text = f"{base}{hashtag_id}"
-    if tag_text not in used_tags:
-        used_tags.add(tag_text)
-        first_seen_at = random_timestamp()
-        hashtags.append([hashtag_id, tag_text, first_seen_at])
-        hashtag_id += 1
-
-with open(os.path.join(DATA_DIR, "hashtag.csv"), "w", newline="", encoding="utf-8") as f:
-    writer = csv.writer(f)
-    writer.writerow(["hashtag_id", "tag_text", "first_seen_at"])
-    writer.writerows(hashtags)
-
-# -------------------------
-# TWEET
-# -------------------------
-tweets = []
-tweet_ids = []
-
-for i in range(NUM_TWEETS):
-    tweet_id = 1001 + i
-    tweet_ids.append(tweet_id)
-    user_id = random.randint(1, NUM_USERS)
-    tweet_text = random.choice(tweet_phrases)
-    created_at = random_timestamp()
-    lang = "en"
-
-    reply_to_tweet_id = ""
-    if i >= 10 and random.random() < 0.20:
-        reply_to_tweet_id = random.choice(tweet_ids[:-1])
-
-    tweets.append([tweet_id, user_id, tweet_text, created_at, lang, reply_to_tweet_id])
-
+# Write TWEET
 with open(os.path.join(DATA_DIR, "tweet.csv"), "w", newline="", encoding="utf-8") as f:
     writer = csv.writer(f)
     writer.writerow(["tweet_id", "user_id", "tweet_text", "created_at", "lang", "reply_to_tweet_id"])
     writer.writerows(tweets)
 
-# -------------------------
-# SENTIMENT_SCORE
-# -------------------------
-sentiment_scores = []
-for tweet in tweets:
-    tweet_id = tweet[0]
-    score = round(random.uniform(-1.00, 1.00), 2)
-    model_version = "v1"
-    computed_at = random_timestamp()
-    sentiment_scores.append([tweet_id, score, model_version, computed_at])
+# Write HASHTAG
+with open(os.path.join(DATA_DIR, "hashtag.csv"), "w", newline="", encoding="utf-8") as f:
+    writer = csv.writer(f)
+    writer.writerow(["hashtag_id", "tag_text", "first_seen_at"])
+    writer.writerows(hashtags)
 
+# Write SENTIMENT_SCORE
 with open(os.path.join(DATA_DIR, "sentiment_score.csv"), "w", newline="", encoding="utf-8") as f:
     writer = csv.writer(f)
     writer.writerow(["tweet_id", "score", "model_version", "computed_at"])
     writer.writerows(sentiment_scores)
 
-# -------------------------
-# TWEET_HASHTAG
-# -------------------------
-tweet_hashtag_rows = []
-used_pairs = set()
-
-for tweet in tweets:
-    tweet_id = tweet[0]
-    num_tags = random.randint(1, 3)
-    chosen_hashtags = random.sample(range(1, NUM_HASHTAGS + 1), num_tags)
-
-    for hashtag_id in chosen_hashtags:
-        pair = (tweet_id, hashtag_id)
-        if pair not in used_pairs:
-            used_pairs.add(pair)
-            tagged_at = random_timestamp()
-            tweet_hashtag_rows.append([tweet_id, hashtag_id, tagged_at])
-
+# Write TWEET_HASHTAG
 with open(os.path.join(DATA_DIR, "tweet_hashtag.csv"), "w", newline="", encoding="utf-8") as f:
     writer = csv.writer(f)
     writer.writerow(["tweet_id", "hashtag_id", "tagged_at"])
     writer.writerows(tweet_hashtag_rows)
 
-print("CSV files generated successfully in the data folder.")
-print("Generated files:")
-print("- data/app_user.csv")
-print("- data/tweet.csv")
-print("- data/hashtag.csv")
-print("- data/sentiment_score.csv")
-print("- data/tweet_hashtag.csv")
+print("Finished generating cleaned CSV files from archive.zip")
+print(f"APP_USER rows: {len(users)}")
+print(f"TWEET rows: {len(tweets)}")
+print(f"HASHTAG rows: {len(hashtags)}")
+print(f"SENTIMENT_SCORE rows: {len(sentiment_scores)}")
+print(f"TWEET_HASHTAG rows: {len(tweet_hashtag_rows)}")
