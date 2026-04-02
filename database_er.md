@@ -16,7 +16,7 @@ erDiagram
     TWEET ||--o{ TWEET_HASHTAG : tagged_with
     HASHTAG ||--o{ TWEET_HASHTAG : appears_in
 
-    USER {
+    APP_USER {
       int user_id PK
       string username
       string email
@@ -61,8 +61,8 @@ All relations pass BCNF because each nontrivial FD has a determinant that is a p
 
 ### Final Schema
 
-- **USER**(user_id PK, username, email UNIQUE, display_name, location, created_at)
-- **TWEET**(tweet_id PK, user_id FK→USER.user_id, tweet_text, created_at, lang, reply_to_tweet_id FK→TWEET.tweet_id NULL)
+- **APP_USER**(user_id PK, username, email UNIQUE, display_name, location, created_at)
+- **TWEET**(tweet_id PK, user_id FK→APP_USER.user_id, tweet_text, created_at, lang, reply_to_tweet_id FK→TWEET.tweet_id NULL)
 - **HASHTAG**(hashtag_id PK, tag_text UNIQUE, first_seen_at)
 - **TWEET_HASHTAG**(tweet_id PK/FK→TWEET.tweet_id, hashtag_id PK/FK→HASHTAG.hashtag_id, tagged_at)  
   PK = (tweet_id, hashtag_id)
@@ -70,7 +70,7 @@ All relations pass BCNF because each nontrivial FD has a determinant that is a p
 
 ### Functional Dependencies
 
-- USER: user_id → username, email, display_name, location, created_at; email → user_id (email unique)
+- APP_USER: user_id → username, email, display_name, location, created_at; email → user_id (email unique)
 - TWEET: tweet_id → user_id, tweet_text, created_at, lang, reply_to_tweet_id
 - HASHTAG: hashtag_id → tag_text, first_seen_at; tag_text → hashtag_id (tag_text unique)
 - TWEET_HASHTAG: (tweet_id, hashtag_id) → tagged_at
@@ -81,7 +81,7 @@ All relations pass BCNF because each nontrivial FD has a determinant that is a p
 
 ```mermaid
 erDiagram
-    USER ||--o{ TWEET : posts
+    APP_USER ||--o{ TWEET : posts
     TWEET ||--|| SENTIMENT_SCORE : has
     TWEET ||--o{ TWEET_HASHTAG : tagged_with
     HASHTAG ||--o{ TWEET_HASHTAG : appears_in
