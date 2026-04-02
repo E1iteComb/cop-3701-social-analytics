@@ -47,5 +47,5 @@ This project builds a social analytics database for tweets, hashtags, and sentim
 - Final ER design: [database_er.md](database_er.md)
 - Database schema script: [create_db.sql](create_db.sql)
 - Data preprocessing script: [preprocess.py](preprocess.py)
-- Data loading script: [dataload.py](dataload.py)
+- Data loading script: [dataload.py](dataload.sql)
 - CSV data files: [data/](data/)
