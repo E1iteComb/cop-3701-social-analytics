@@ -40,3 +40,12 @@ This project builds a social analytics database for tweets, hashtags, and sentim
 - One-to-one relationship between Tweet and SentimentScore.
 - Automated sentiment aggregation and trend ranking.
 - Proper enforcement of primary and foreign key constraints.
+
+
+## Part D Files
+
+- Final ER design: [database_er.md](database_er.md)
+- Database schema script: [create_db.sql](create_db.sql)
+- Data preprocessing script: [preprocess.py](preprocess.py)
+- Data loading script: [dataload.py](dataload.py)
+- CSV data files: [data/](data/)
