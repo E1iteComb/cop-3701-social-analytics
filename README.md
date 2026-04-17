@@ -49,3 +49,6 @@ This project builds a social analytics database for tweets, hashtags, and sentim
 - Data preprocessing script: [preprocess.py](preprocess.py)
 - Data loading script: [dataload.py](dataload.sql)
 - CSV data files: [data/](data/)
+
+
+## Part E feature implementation by Johnathan Nguyen
