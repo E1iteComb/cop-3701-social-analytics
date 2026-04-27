@@ -1,5 +1,14 @@
 # COP 3701 Project: Social Analytics Database
 
+## How To Use
+Step 1: Use the “create_db.sql” to create the database
+Step 2: Use the dataload.sql to populate the database with toy data
+Step 3: Change app.py and add your database credentials
+Step 4: run the app.py using the command below
+Python -m streamlit run app.py
+
+
+
 ## Application Domain
 This project builds a social analytics database focused on short-form posts. The system stores tweet content and metadata, tracks hashtag usage over time, and supports analytics like trending hashtags.
 
