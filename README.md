@@ -31,7 +31,7 @@ Possible sources include:
 
 ---
 
-## Database Application (Part B)
+## Database Application
 
 This project builds a social analytics database for tweets, hashtags, and sentiment scores. The system stores tweet content and metadata, tracks hashtag usage frequency, and supports hashtag trend ranking.
 
@@ -42,13 +42,10 @@ This project builds a social analytics database for tweets, hashtags, and sentim
 - Proper enforcement of primary and foreign key constraints.
 
 
-## Part D Files
+## Useful Files
 
 - Final ER design: [database_er.md](database_er.md)
 - Database schema script: [create_db.sql](create_db.sql)
 - Data preprocessing script: [preprocess.py](preprocess.py)
 - Data loading script: [dataload.py](dataload.sql)
 - CSV data files: [data/](data/)
-
-
-## Part E feature implementation by Johnathan Nguyen
